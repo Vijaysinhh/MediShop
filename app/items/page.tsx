@@ -1,7 +1,10 @@
-import { ItemsManagement } from './components';
+import { Suspense } from "react";
+import { ItemsManagement } from "./components";
 
 export default function ItemsPage() {
   return (
-    <ItemsManagement />
+    <Suspense fallback={null}>
+      <ItemsManagement />
+    </Suspense>
   );
 }

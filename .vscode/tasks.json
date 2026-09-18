@@ -1,0 +1,77 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "type-check",
+			"type": "shell",
+			"command": "pnpm exec tsc --noEmit --pretty false",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "pnpm build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "verify-screens",
+			"type": "shell",
+			"command": "pnpm build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "rebuild-after-fix",
+			"type": "shell",
+			"command": "pnpm build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "staff-permissions-verify",
+			"type": "shell",
+			"command": "pnpm build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "staff-permissions-verify",
+			"type": "shell",
+			"command": "pnpm build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "landing-shell-verify",
+			"type": "shell",
+			"command": "pnpm build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "navigation-verify",
+			"type": "shell",
+			"command": "pnpm build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		}
+	]
+}

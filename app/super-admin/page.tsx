@@ -129,17 +129,20 @@ export default function SuperAdminPage() {
   };
 
   const deleteShop = async (shop: ShopRow) => {
-    if (!window.confirm(`Delete ${shop.name}? This permanently removes its pharmacy data and owner membership.`)) return;
+    const typedName = window.prompt(`This will archive ${shop.name}; its data and owner account will be preserved. Type the pharmacy name to confirm.`);
+    if (typedName !== shop.name) {
+      if (typedName !== null) toast.error("The pharmacy name did not match. No changes were made.");
+      return;
+    }
     const { data: sessionData } = await supabase.auth.getSession();
     const response = await fetch("/api/superadmin/shops", {
       method: "DELETE",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionData.session?.access_token || ""}` },
-      body: JSON.stringify({ shopId: shop.id }),
+      body: JSON.stringify({ shopId: shop.id, shopName: typedName }),
     });
     const result = await readApiResponse(response);
-    if (!response.ok && !result.shopDeleted) { toast.error(result.error || "Could not delete the medical shop."); return; }
-    if (result.shopDeleted) toast.warning(result.error);
-    else toast.success("Medical shop and its unused login accounts were deleted.");
+    if (!response.ok) { toast.error(result.error || "Could not archive the medical shop."); return; }
+    toast.success("Medical shop archived. Its data and owner account are preserved.");
     await loadShops();
   };
 
@@ -181,9 +184,9 @@ export default function SuperAdminPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={() => editShop(shop)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
-                <Button variant="outline" size="sm" onClick={() => void togglePause(shop)}><CirclePause className="mr-1 h-4 w-4" />{shop.status === "paused" ? "Reactivate" : "Pause"}</Button>
-                <Button variant="destructive" size="sm" onClick={() => void deleteShop(shop)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
+                <Button variant="outline" size="sm" onClick={() => editShop(shop)} disabled={shop.status === "archived"}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
+                <Button variant="outline" size="sm" onClick={() => void togglePause(shop)} disabled={shop.status === "archived"}><CirclePause className="mr-1 h-4 w-4" />{shop.status === "paused" ? "Reactivate" : "Pause"}</Button>
+                <Button variant={shop.status === "archived" ? "outline" : "destructive"} size="sm" onClick={() => void deleteShop(shop)} disabled={shop.status === "archived"}><Trash2 className="mr-1 h-4 w-4" />{shop.status === "archived" ? "Archived" : "Delete"}</Button>
               </div>
             </div>
           )) : (

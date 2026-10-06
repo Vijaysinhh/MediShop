@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-// Legacy helper signatures accept both values; the app supplies English only.
+// Keep language selection centralized so screens can opt into localized labels.
 export type AppLanguage = "en" | "mr";
 
 const translations: Record<string, string> = {
@@ -269,18 +269,62 @@ const translations: Record<string, string> = {
   "only_available": "Only {qty} {unit} available"
 };
 
-const english = {
-  language: "en" as AppLanguage,
-  locale: "en-IN",
-  t: (key: string): string => translations[key] || key,
-  formatDate: (date: Date, options?: Intl.DateTimeFormatOptions) =>
-    date.toLocaleDateString("en-IN", options),
+const marathiTranslations: Record<string, string> = {
+  dashboard: "डॅशबोर्ड", items: "औषधे", categories: "वर्ग", units: "एकके", settings: "सेटिंग्ज",
+  add: "जोडा", edit: "संपादित करा", delete: "हटवा", save: "जतन करा", cancel: "रद्द करा", search: "शोधा",
+  name: "नाव", price: "किंमत", quantity: "प्रमाण", category: "वर्ग", unit: "एकक", buy_price: "खरेदी किंमत",
+  sell_price: "विक्री किंमत", margin: "नफा", language: "भाषा", english: "इंग्रजी", home: "मुख्यपृष्ठ",
+  stock: "साठा", udhari: "उधारी", new_sale: "नवीन विक्री", logout: "बाहेर पडा", sale: "विक्री",
+  today_sales: "आजची विक्री", today_profit: "आजचा नफा", bills_today: "आजची बिले", needs_attention: "लक्ष देणे आवश्यक",
+  view_all: "सर्व पहा", this_week: "या आठवड्यात", restock: "पुन्हा मागवा", reports: "अहवाल",
+  customer: "ग्राहक", add_customer: "ग्राहक जोडा", pending_amount: "बाकी रक्कम", customers: "ग्राहक",
+  balance: "बाकी", payment: "पेमेंट", history: "इतिहास", recent: "अलीकडील", amount: "रक्कम", note: "नोंद",
+  receive_payment: "पेमेंट स्वीकारा", quick_sale: "त्वरित विक्री", sale_items: "विक्रीतील औषधे",
+  payment_method: "पेमेंट पद्धत", complete_sale: "विक्री पूर्ण करा", processing: "प्रक्रिया सुरू आहे…",
+  cash: "रोख", sell: "विक्री", total_value: "एकूण साठा मूल्य", low_stock: "कमी साठा", total_items: "एकूण औषधे",
+  search_items: "औषधे शोधा…", today: "आज", shop: "दुकान", loading: "लोड होत आहे…", reports_help: "विक्री, साठा आणि नफ्याचे अहवाल पहा",
+  language_desc: "तुमची पसंतीची भाषा निवडा", save_customer: "ग्राहक जतन करा", save_payment: "पेमेंट जतन करा",
+  repeat_customers: "आज पुन्हा औषध घेण्याची वेळ", close_day: "दिवसाचा हिशेब बंद करा", stock_view: "साठा दृश्य",
 };
 
-const LanguageContext = createContext(english);
+type LanguageContextType = {
+  language: AppLanguage;
+  locale: string;
+  t: (key: string) => string;
+  formatDate: (date: Date, options?: Intl.DateTimeFormatOptions) => string;
+  setLanguage: (language: AppLanguage) => void;
+};
+
+const english: LanguageContextType = {
+  language: "en",
+  locale: "en-IN",
+  t: (key) => translations[key] || key,
+  formatDate: (date, options) => date.toLocaleDateString("en-IN", options),
+  setLanguage: () => undefined,
+};
+
+const LanguageContext = createContext<LanguageContextType>(english);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  return <LanguageContext.Provider value={english}>{children}</LanguageContext.Provider>;
+  const [language, setLanguageState] = useState<AppLanguage>("en");
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("medishop-language");
+    if (saved === "en" || saved === "mr") setLanguageState(saved);
+  }, []);
+
+  const value = useMemo<LanguageContextType>(() => ({
+    language,
+    locale: language === "mr" ? "mr-IN" : "en-IN",
+    t: (key) => language === "mr" ? (marathiTranslations[key] || translations[key] || key) : (translations[key] || key),
+    formatDate: (date, options) => date.toLocaleDateString(language === "mr" ? "mr-IN" : "en-IN", options),
+    setLanguage: (nextLanguage) => {
+      window.localStorage.setItem("medishop-language", nextLanguage);
+      setLanguageState(nextLanguage);
+    },
+  }), [language]);
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {

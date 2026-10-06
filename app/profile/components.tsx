@@ -25,7 +25,7 @@ import { createClient } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 
 export function Profile() {
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { user, currentShopId, currentShop } = useAuth();
   const supabase = createClient();
   const { toast } = useToast();
@@ -143,6 +143,20 @@ export function Profile() {
           </span>
         </div>
       </section>
+
+      <Card className="border-teal-100 shadow-sm">
+        <CardHeader className="border-b border-teal-100 bg-gradient-to-r from-teal-50 to-white">
+          <CardTitle>{t("language")}</CardTitle>
+          <CardDescription>{t("language_desc")}</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-5">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1.5 sm:max-w-md" role="group" aria-label={t("language")}>
+            <Button type="button" variant={language === "en" ? "default" : "ghost"} aria-pressed={language === "en"} onClick={() => setLanguage("en")}>English</Button>
+            <Button type="button" variant={language === "mr" ? "default" : "ghost"} aria-pressed={language === "mr"} onClick={() => setLanguage("mr")}>मराठी</Button>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">{language === "mr" ? "तुमची भाषा या डिव्हाइसवर जतन केली जाईल." : "Your language preference is saved on this device."}</p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6">
         {/* User Info Card */}

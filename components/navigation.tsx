@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NotificationCenter } from "@/components/notification-center";
 import { OfflineStatus } from "@/components/offline-status";
+import { useLanguage } from "@/providers/language-provider";
 
 type NavItem = { href: string; label: string; icon: typeof Home; description?: string };
 
@@ -44,6 +45,7 @@ const ownerMore: NavItem[] = [
 
 export function Navigation() {
   const { user, currentShop, logout, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -51,7 +53,7 @@ export function Navigation() {
 
   useEffect(() => {
     if (!isAuthenticated || pathname?.startsWith("/login")) return;
-    if (user?.role === "super_admin" && (pathname === "/" || !canUserAccessPath(user, pathname))) router.replace("/super-admin");
+    if (user?.role === "super_admin" && (pathname === "/" || !canUserAccessPath(user, pathname))) router.replace("/superadmin");
     else if (user?.role === "worker" && (pathname === "/" || !canUserAccessPath(user, pathname))) router.replace(getUserLandingPath(user));
     else if (pathname === "/") router.replace("/dashboard");
   }, [isAuthenticated, pathname, router, user]);
@@ -68,7 +70,11 @@ export function Navigation() {
   if (!isAuthenticated || pathname?.startsWith("/login")) return null;
 
   const isOwner = user?.role === "owner" || user?.role === "manager";
-  const desktopItems = user?.role === "super_admin" ? [{ href: "/super-admin", label: "Platform", icon: Shield }] : isOwner ? ownerDesktop : workerNav;
+  const desktopItems = user?.role === "super_admin" ? [{ href: "/superadmin", label: "Platform", icon: Shield }] : isOwner ? ownerDesktop : workerNav;
+  const localizedLabel = (label: string) => {
+    const keyByLabel: Record<string, string> = { Overview: "home", Billing: "sale", Inventory: "stock", Purchases: "restock", "Customers & Due": "udhari", "Returns & Expiry": "expiry_alerts", Reports: "reports", Team: "workers", Settings: "settings", Sell: "sell", Lookup: "search", Activity: "recent", Home: "home" };
+    return keyByLabel[label] ? t(keyByLabel[label]) : label;
+  };
   const mobileItems: NavItem[] = isOwner
     ? [{ href: "/dashboard", label: "Home", icon: Home }, { href: "/sales", label: "Sell", icon: ShoppingCart }, { href: "/items", label: "Inventory", icon: Package }]
     : workerNav.slice(0, 3);
@@ -85,7 +91,7 @@ export function Navigation() {
 
   return <>
     <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center border-b bg-background/95 px-3 backdrop-blur sm:h-20 sm:px-5">
-      <Link href={user?.role === "super_admin" ? "/super-admin" : "/dashboard"} className="flex shrink-0 items-center gap-2">
+      <Link href={user?.role === "super_admin" ? "/superadmin" : "/dashboard"} className="flex shrink-0 items-center gap-2">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-700 text-white"><HeartPulse className="h-5 w-5" /></span>
         <span className="hidden sm:block"><span className="block text-lg font-bold leading-tight">MediShop</span><span className="block max-w-40 truncate text-xs text-muted-foreground">{currentShop?.name || (user?.role === "super_admin" ? "Platform administration" : "Pharmacy workspace")}</span></span>
       </Link>
@@ -95,16 +101,16 @@ export function Navigation() {
 
       <div className="flex items-center gap-1.5"><OfflineStatus />
         {user?.role !== "super_admin" && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full"><Bell className="h-5 w-5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-[340px] max-w-[calc(100vw-1rem)] p-2"><NotificationCenter compact /></DropdownMenuContent></DropdownMenu>}
-        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full"><Avatar className="h-9 w-9"><AvatarFallback className="bg-slate-900 text-white">{(user?.fullName || user?.username || "U").charAt(0).toUpperCase()}</AvatarFallback></Avatar></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-60"><DropdownMenuLabel><span className="block truncate">{user?.fullName || user?.username}</span><span className="text-xs font-normal capitalize text-muted-foreground">{user?.role?.replace("_", " ")}</span></DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuItem asChild><Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link></DropdownMenuItem>{isOwner && <DropdownMenuItem asChild><Link href="/subscription"><CreditCard className="mr-2 h-4 w-4" />Subscription</Link></DropdownMenuItem>}<DropdownMenuSeparator /><DropdownMenuItem className="text-red-600" onClick={() => void signOut()}><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full"><Avatar className="h-9 w-9"><AvatarFallback className="bg-slate-900 text-white">{(user?.fullName || user?.username || "U").charAt(0).toUpperCase()}</AvatarFallback></Avatar></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-60"><DropdownMenuLabel><span className="block truncate">{user?.fullName || user?.username}</span><span className="text-xs font-normal capitalize text-muted-foreground">{user?.role?.replace("_", " ")}</span></DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuItem asChild><Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link></DropdownMenuItem>{isOwner && <DropdownMenuItem asChild><Link href="/subscription"><CreditCard className="mr-2 h-4 w-4" />Subscription</Link></DropdownMenuItem>}<DropdownMenuSeparator /><DropdownMenuItem className="text-red-600" onClick={() => void signOut()}><LogOut className="mr-2 h-4 w-4" />{t("logout")}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
       </div>
     </header>
 
     <aside className="fixed bottom-0 left-0 top-20 z-30 hidden w-56 border-r bg-background sm:flex sm:flex-col">
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">{isOwner && <Link href="/sales" className="mb-3 flex items-center gap-3 rounded-xl bg-teal-700 px-3 py-3 text-sm font-semibold text-white shadow-sm hover:bg-teal-800"><ShoppingCart className="h-5 w-5" />New bill</Link>}{desktopItems.map((item) => <Link key={item.href} href={item.href} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition", isActive(item.href) ? "bg-teal-50 text-teal-800" : "text-muted-foreground hover:bg-muted hover:text-foreground")}><item.icon className="h-5 w-5" />{item.label}</Link>)}</nav>
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">{isOwner && <Link href="/sales" className="mb-3 flex items-center gap-3 rounded-xl bg-teal-700 px-3 py-3 text-sm font-semibold text-white shadow-sm hover:bg-teal-800"><ShoppingCart className="h-5 w-5" />New bill</Link>}{desktopItems.map((item) => <Link key={item.href} href={item.href} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition", isActive(item.href) ? "bg-teal-50 text-teal-800" : "text-muted-foreground hover:bg-muted hover:text-foreground")}><item.icon className="h-5 w-5" />{localizedLabel(item.label)}</Link>)}</nav>
       {isOwner && <div className="border-t p-3"><div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-2"><Store className="h-4 w-4 text-teal-700" /><span className="truncate text-xs font-semibold">{currentShop?.name}</span></div><p className="mt-1 text-[11px] capitalize text-muted-foreground">{currentShop?.subscription_plan || "Trial"} plan</p></div></div>}
     </aside>
 
-    {(isOwner || user?.role === "worker") && <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 border-t bg-background/95 backdrop-blur sm:hidden">{mobileItems.map((item) => <Link key={item.href} href={item.href} className={cn("flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold", isActive(item.href) ? "text-teal-700" : "text-muted-foreground")}><item.icon className="h-5 w-5" />{item.label}</Link>)}<button type="button" onClick={() => setMoreOpen(true)} className={cn("flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold", ownerMore.some((item) => isActive(item.href)) ? "text-teal-700" : "text-muted-foreground")}><Menu className="h-5 w-5" />More</button></nav>}
+    {(isOwner || user?.role === "worker") && <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 border-t bg-background/95 backdrop-blur sm:hidden">{mobileItems.map((item) => <Link key={item.href} href={item.href} className={cn("flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold", isActive(item.href) ? "text-teal-700" : "text-muted-foreground")}><item.icon className="h-5 w-5" />{localizedLabel(item.label)}</Link>)}<button type="button" onClick={() => setMoreOpen(true)} className={cn("flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold", ownerMore.some((item) => isActive(item.href)) ? "text-teal-700" : "text-muted-foreground")}><Menu className="h-5 w-5" />More</button></nav>}
 
     <Sheet open={moreOpen} onOpenChange={setMoreOpen}><SheetContent side="bottom" className="max-h-[85dvh] rounded-t-3xl px-4 pb-7"><SheetHeader className="text-left"><SheetTitle>More pharmacy tools</SheetTitle><SheetDescription>Operations used outside the main counter flow.</SheetDescription></SheetHeader><div className="mt-4 grid gap-2 sm:grid-cols-2">{(isOwner ? ownerMore : workerNav).map((item) => <Link key={item.href} href={item.href} onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-2xl border p-3.5 transition hover:border-teal-200 hover:bg-teal-50"><span className="rounded-xl bg-slate-100 p-2 text-teal-700"><item.icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{item.label}</span>{item.description && <span className="block text-xs text-muted-foreground">{item.description}</span>}</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>)}</div></SheetContent></Sheet>
   </>;

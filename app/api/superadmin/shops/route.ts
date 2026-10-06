@@ -248,41 +248,20 @@ export async function DELETE(request: Request) {
   const context = await getAdminContext(request);
   if ("error" in context) return context.error;
   const { admin } = context;
-  const input = await request.json() as { shopId?: string };
+  const input = await request.json() as { shopId?: string; shopName?: string };
   const shopId = input.shopId?.trim();
-  if (!shopId) return fail("A medical shop ID is required.");
+  const shopName = input.shopName?.trim();
+  if (!shopId || !shopName) return fail("A shop ID and typed pharmacy name are required.");
 
-  const { data: memberships, error: membershipsError } = await admin.from("shop_memberships")
-    .select("user_id").eq("shop_id", shopId);
-  if (membershipsError) return fail(membershipsError.message, 500);
+  const { data: shop, error: shopError } = await admin.from("shops")
+    .select("id,name,status").eq("id", shopId).maybeSingle();
+  if (shopError) return fail(shopError.message, 500);
+  if (!shop) return fail("Medical shop was not found.", 404);
+  if (shop.name !== shopName) return fail("The typed pharmacy name does not match.", 400);
+  if (shop.status === "archived") return Response.json({ success: true, archivedShop: shop });
 
-  const { data: deletedShop, error: deleteError } = await admin.from("shops")
-    .delete().eq("id", shopId).select("id,name").maybeSingle();
-  if (deleteError) return fail(deleteError.message, 500);
-  if (!deletedShop) return fail("Medical shop was not found.", 404);
-
-  const cleanupErrors: string[] = [];
-  for (const membership of memberships || []) {
-    const [{ count, error: countError }, { data: platformAdmin, error: platformAdminError }] = await Promise.all([
-      admin.from("shop_memberships").select("shop_id", { count: "exact", head: true }).eq("user_id", membership.user_id),
-      admin.from("platform_admins").select("user_id").eq("user_id", membership.user_id).maybeSingle(),
-    ]);
-    if (countError || platformAdminError) {
-      cleanupErrors.push(countError?.message || platformAdminError?.message || "Could not verify an account.");
-      continue;
-    }
-    if (!platformAdmin && (count || 0) === 0) {
-      const { error } = await admin.auth.admin.deleteUser(membership.user_id);
-      if (error) cleanupErrors.push(error.message);
-    }
-  }
-
-  if (cleanupErrors.length) {
-    return Response.json({
-      error: "The shop was deleted, but one or more unused Auth accounts could not be removed.",
-      shopDeleted: true,
-      details: cleanupErrors,
-    }, { status: 500 });
-  }
-  return Response.json({ success: true, deletedShop });
+  const { data: archivedShop, error: archiveError } = await admin.from("shops")
+    .update({ status: "archived" }).eq("id", shopId).select("id,name,status").single();
+  if (archiveError) return fail(archiveError.message, 500);
+  return Response.json({ success: true, archivedShop });
 }

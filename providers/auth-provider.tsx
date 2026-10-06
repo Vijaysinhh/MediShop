@@ -52,8 +52,8 @@ export function getUserLandingPath(user: Pick<User, "role" | "permissions"> | nu
 export function canUserAccessPath(user: Pick<User, "role" | "permissions"> | null, pathname: string | null | undefined): boolean {
   if (!pathname || pathname === "/" || pathname.startsWith("/login")) return true;
   if (!user) return false;
-  if (user.role === "super_admin") return pathname.startsWith("/super-admin") || pathname.startsWith("/profile");
-  if (pathname.startsWith("/super-admin")) return false;
+  if (user.role === "super_admin") return pathname.startsWith("/super-admin") || pathname.startsWith("/superadmin") || pathname.startsWith("/profile");
+  if (pathname.startsWith("/super-admin") || pathname.startsWith("/superadmin")) return false;
   if (user.role === "owner" || user.role === "manager") return true;
   const permissions = normalizeUserPermissions(user.role, user.permissions);
   if (pathname.startsWith("/sales")) return permissions.canCreateSales || permissions.canViewSales;
